@@ -1,12 +1,14 @@
 'use client';
 import { useState, useEffect } from 'react';
+import type { User } from '@/lib/db';
 
 export default function UsuariosPage() {
-    const [users, setUsers] = useState([]);
+
+    const [users, setUsers] = useState<User[]>([]);
     const [loading, setLoading] = useState(true);
     const [msg, setMsg] = useState('');
     const [msgAddr, setMsgAddr] = useState('');
-    const [form, setForm] = useState({ id: '', name: '', gmail: '', password: '', role: 'user' });
+    const [form, setForm] = useState({ id: 0, name: '', gmail: '', password: '', role: 'user' });
     const [addr, setAddr] = useState({ userId: '', street: '', city: '', number: '' });
 
     useEffect(() => {
@@ -26,11 +28,11 @@ export default function UsuariosPage() {
         }
     }
 
-    async function guardarUsuario(e) {
+    async function guardarUsuario(e: React.FormEvent) {
         e.preventDefault();
         setMsg('');
-        const esActualizacion = form.id !== '';
-        const url = esActualizacion ? `/api/v1/users/${form.id}` : '/api/v1/users';
+            const esActualizacion = form.id !== 0;
+            const url = esActualizacion ? `/api/v1/users/${form.id}` : '/api/v1/users';
         const metodo = esActualizacion ? 'PUT' : 'POST';
 
         try {
@@ -47,47 +49,29 @@ export default function UsuariosPage() {
             const data = await res.json();
             if (!res.ok) throw new Error(data.error || 'Error');
             setMsg(esActualizacion ? 'Usuario actualizado' : 'Usuario creado');
-            setForm({ id: '', name: '', gmail: '', password: '', role: 'user' });
+            setForm({ id: 0, name: '', gmail: '', password: '', role: 'user' });
             cargarUsuarios();
-        } catch (err) {
-            setMsg('Error: ' + err.message);
+        } catch (err: unknown) {
+            setMsg('Error: ' + (err instanceof Error ? err.message : 'Error desconocido'));
         }
     }
 
-<<<<<<< HEAD
-  async function eliminarUsuario(id) {
-    if (!confirm('¿Eliminar este usuario?')) return;
-    console.log('Eliminando usuario con ID:', id);
-    try {
-      const res = await fetch(`/api/v1/users/${id}`, {
-        method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${TOKEN}` }
-      });
-      if (!res.ok) throw new Error('Error al eliminar');
-      cargarUsuarios();
-    } catch (err) {
-      alert(err.message);
-=======
-    async function eliminarUsuario(id) {
-        const idNum = Number(id);
-        if (isNaN(idNum) || idNum <= 0) {
-            alert('ID inválido');
-            return;
-        }
+    async function eliminarUsuario(id: number) {
         if (!confirm('¿Eliminar este usuario?')) return;
+        console.log('Eliminando usuario con ID:', id);
         try {
-            const res = await fetch(`/api/v1/users/${idNum}`, {
-                method: 'DELETE'
+            const res = await fetch(`/api/v1/users/${id}`, {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' }
             });
             if (!res.ok) throw new Error('Error al eliminar');
             cargarUsuarios();
-        } catch (err) {
-            alert(err.message);
+        } catch (err: unknown) {
+            alert(err instanceof Error ? err.message : 'Error desconocido');
         }
->>>>>>> 615c3d42c5d5cfb0113f34f4f986cda9ebc7b16c
     }
 
-    function editarUsuario(user) {
+    function editarUsuario(user: User) {
         const idNum = Number(user.id);
         if (isNaN(idNum) || idNum <= 0) {
             alert('ID inválido');
@@ -102,7 +86,7 @@ export default function UsuariosPage() {
         });
     }
 
-    async function guardarDireccion(e) {
+    async function guardarDireccion(e: React.FormEvent) {
         e.preventDefault();
         setMsgAddr('');
         if (!addr.userId) {
@@ -126,8 +110,8 @@ export default function UsuariosPage() {
             setMsgAddr('Dirección actualizada');
             setAddr({ userId: '', street: '', city: '', number: '' });
             cargarUsuarios();
-        } catch (err) {
-            setMsgAddr('Error: ' + err.message);
+        } catch (err: unknown) {
+            setMsgAddr('Error: ' + (err instanceof Error ? err.message : 'Error desconocido'));
         }
     }
 
@@ -146,7 +130,7 @@ export default function UsuariosPage() {
                         <option value="admin">Admin</option>
                     </select><br/><br/>
                     <button type="submit">{form.id ? 'Actualizar' : 'Crear'}</button>
-                    {form.id && <button type="button" onClick={() => setForm({ id: '', name: '', gmail: '', password: '', role: 'user' })}>Cancelar</button>}
+                    {form.id !== 0 && <button type="button" onClick={() => setForm({ id: 0, name: '', gmail: '', password: '', role: 'user' })}>Cancelar</button>}
                     <span style={{ marginLeft: '10px' }}>{msg}</span>
                 </form>
             </div>

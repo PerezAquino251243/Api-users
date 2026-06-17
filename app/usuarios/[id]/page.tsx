@@ -61,12 +61,14 @@ export default async function UserPage({
         <p><strong>Name:</strong> {user.name}</p>
         <p><strong>Email:</strong> {user.gmail}</p>
         <p><strong>Role:</strong> {user.role}</p>
-        <div className="border-t pt-4">
-          <h2 className="font-semibold text-xl mb-2">Address</h2>
-          <p><strong>Street:</strong> {user.address.street}</p>
-          <p><strong>Number:</strong> {user.address.number}</p>
-          <p><strong>City:</strong> {user.address.city}</p>
-        </div>
+        {user.address && (
+          <div className="border-t pt-4">
+            <h2 className="font-semibold text-xl mb-2">Address</h2>
+            {user.address.street && <p><strong>Street:</strong> {user.address.street}</p>}
+            {user.address.number != null && <p><strong>Number:</strong> {user.address.number}</p>}
+            {user.address.city && <p><strong>City:</strong> {user.address.city}</p>}
+          </div>
+        )}
       </div>
     </div>
   );

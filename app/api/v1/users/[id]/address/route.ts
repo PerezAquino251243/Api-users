@@ -1,39 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { users, findUserIndexById } from '@/lib/db';
 
-<<<<<<< HEAD
-// Simulación de autenticación (igual que antes)
-function checkAuth(request: NextRequest) {
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader) {
-        return { status: 401, error: 'No autorizado' };
-    }
-    const token = authHeader.split(' ')[1];
-    if (token === 'admin-token' || token === 'user-token') {
-        return { status: 200 };
-    }
-    return { status: 403, error: 'Prohibido' };
-}
-
-export async function PATCH(
-    request: NextRequest,
-    context: { params: Promise<{ id: string }> }
-) {
+export async function PATCH(request: NextRequest, context: { params: Promise<{ id: string }> }) {
     try {
-        const auth = checkAuth(request);
-        if (auth.status !== 200) {
-            return NextResponse.json({ error: auth.error }, { status: auth.status });
-        }
-
-        const { id } = await context.params;
-        const userId = parseInt(id);
-        if (isNaN(userId)) {
-=======
-export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
-    try {
-        const id = Number(params.id);
+        const { id: idStr } = await context.params;
+        const id = Number(idStr);
         if (isNaN(id) || id <= 0) {
->>>>>>> 615c3d42c5d5cfb0113f34f4f986cda9ebc7b16c
             return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
         }
 
@@ -47,7 +19,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
             );
         }
 
-        const index = findUserIndexById(userId);
+        const index = findUserIndexById(id);
         if (index === -1) {
             return NextResponse.json({ error: 'Usuario no encontrado' }, { status: 404 });
         }

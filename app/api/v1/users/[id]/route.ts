@@ -29,7 +29,7 @@ function checkAuthAndPermissions(request: NextRequest, userId?: number) {
 // GET /api/v1/users/:id
 export async function GET(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    context: { params: Promise<{ id: string }> }
 ) {
     try {
         // Simular autenticación (401)
@@ -38,12 +38,13 @@ export async function GET(
             return NextResponse.json({ error: auth.error }, { status: auth.status });
         }
 
-        const id = parseInt(params.id);
-        if (isNaN(id)) {
+        const { id } = await context.params;
+        const userId = parseInt(id);
+        if (isNaN(userId)) {
             return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
         }
 
-        const user = findUserById(id);
+        const user = findUserById(userId);
         if (!user) {
             return NextResponse.json({ error: 'Usuario no encontrado' }, { status: 404 });
         }
@@ -58,25 +59,26 @@ export async function GET(
 // DELETE /api/v1/users/:id
 export async function DELETE(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    context: { params: Promise<{ id: string }> } // <-- Cambio aquí: params es una Promesa
 ) {
     try {
-        // Simular autenticación (401 y 403)
         const auth = checkAuthAndPermissions(request);
         if (auth.status !== 200) {
             return NextResponse.json({ error: auth.error }, { status: auth.status });
         }
-        // Si el usuario no es admin, podría devolver 403 (ejemplo)
         if (auth.role !== 'admin') {
             return NextResponse.json({ error: 'No tienes permisos para eliminar usuarios' }, { status: 403 });
         }
 
-        const id = parseInt(params.id);
-        if (isNaN(id)) {
-            return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
+        // Esperar los params
+        const { id } = await context.params; 
+
+        const userId = parseInt(id);
+        if (isNaN(userId)) {
+            return NextResponse.json({ error: `ID inválido: ${id}` }, { status: 400 });
         }
 
-        const index = findUserIndexById(id);
+        const index = findUserIndexById(userId);
         if (index === -1) {
             return NextResponse.json({ error: 'Usuario no encontrado' }, { status: 404 });
         }
@@ -91,7 +93,7 @@ export async function DELETE(
 // PUT /api/v1/users/:id (actualización completa)
 export async function PUT(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    context: { params: Promise<{ id: string }> }
 ) {
     try {
         const auth = checkAuthAndPermissions(request);
@@ -99,8 +101,9 @@ export async function PUT(
             return NextResponse.json({ error: auth.error }, { status: auth.status });
         }
 
-        const id = parseInt(params.id);
-        if (isNaN(id)) {
+        const { id } = await context.params;
+        const userId = parseInt(id);
+        if (isNaN(userId)) {
             return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
         }
 
@@ -114,12 +117,12 @@ export async function PUT(
             );
         }
 
-        const index = findUserIndexById(id);
+        const index = findUserIndexById(userId);
         if (index === -1) {
             return NextResponse.json({ error: 'Usuario no encontrado' }, { status: 404 });
         }
 
-        if (isGmailTaken(gmail, id)) {
+        if (isGmailTaken(gmail, userId)) {
             return NextResponse.json(
                 { error: 'El gmail ya está registrado por otro usuario' },
                 { status: 409 }
@@ -145,7 +148,7 @@ export async function PUT(
 // PATCH /api/v1/users/:id (actualización parcial)
 export async function PATCH(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    context: { params: Promise<{ id: string }> }
 ) {
     try {
         const auth = checkAuthAndPermissions(request);
@@ -153,21 +156,22 @@ export async function PATCH(
             return NextResponse.json({ error: auth.error }, { status: auth.status });
         }
 
-        const id = parseInt(params.id);
-        if (isNaN(id)) {
+        const { id } = await context.params;
+        const userId = parseInt(id);
+        if (isNaN(userId)) {
             return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
         }
 
         const body = await request.json();
         const { name, gmail, password, role } = body;
 
-        const index = findUserIndexById(id);
+        const index = findUserIndexById(userId);
         if (index === -1) {
             return NextResponse.json({ error: 'Usuario no encontrado' }, { status: 404 });
         }
 
         // Validar duplicado de gmail si se envía
-        if (gmail && isGmailTaken(gmail, id)) {
+        if (gmail && isGmailTaken(gmail, userId)) {
             return NextResponse.json(
                 { error: 'El gmail ya está registrado por otro usuario' },
                 { status: 409 }

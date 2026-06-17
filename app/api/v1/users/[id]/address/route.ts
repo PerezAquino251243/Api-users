@@ -16,7 +16,7 @@ function checkAuth(request: NextRequest) {
 
 export async function PATCH(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    context: { params: Promise<{ id: string }> }
 ) {
     try {
         const auth = checkAuth(request);
@@ -24,8 +24,9 @@ export async function PATCH(
             return NextResponse.json({ error: auth.error }, { status: auth.status });
         }
 
-        const id = parseInt(params.id);
-        if (isNaN(id)) {
+        const { id } = await context.params;
+        const userId = parseInt(id);
+        if (isNaN(userId)) {
             return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
         }
 
@@ -40,7 +41,7 @@ export async function PATCH(
             );
         }
 
-        const index = findUserIndexById(id);
+        const index = findUserIndexById(userId);
         if (index === -1) {
             return NextResponse.json({ error: 'Usuario no encontrado' }, { status: 404 });
         }

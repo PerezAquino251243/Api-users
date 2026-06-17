@@ -66,6 +66,7 @@ export default function UsuariosPage() {
 
   async function eliminarUsuario(id) {
     if (!confirm('¿Eliminar este usuario?')) return;
+    console.log('Eliminando usuario con ID:', id);
     try {
       const res = await fetch(`/api/v1/users/${id}`, {
         method: 'DELETE',

@@ -7,12 +7,11 @@ const TOKEN = 'admin-token';
 export default function UsuariosPage() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [msg, setMsg] = useState('');
+  const [msgAddr, setMsgAddr] = useState('');
 
   const [form, setForm] = useState({ id: '', name: '', gmail: '', password: '', role: 'user' });
-  const [msg, setMsg] = useState('');
-
   const [addr, setAddr] = useState({ userId: '', street: '', city: '', number: '' });
-  const [msgAddr, setMsgAddr] = useState('');
 
   useEffect(() => {
     cargarUsuarios();
@@ -36,7 +35,8 @@ export default function UsuariosPage() {
   async function guardarUsuario(e) {
     e.preventDefault();
     setMsg('');
-    const esActualizacion = form.id !== '';
+    // Asegurar que el ID sea un número (si existe)
+    const esActualizacion = form.id !== '' && form.id !== null && form.id !== undefined;
     const url = esActualizacion ? `/api/v1/users/${form.id}` : '/api/v1/users';
     const metodo = esActualizacion ? 'PUT' : 'POST';
 
@@ -56,7 +56,7 @@ export default function UsuariosPage() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Error');
-      setMsg(esActualizacion ? 'Usuario actualizado correctamente' : 'Usuario creado correctamente');
+      setMsg(esActualizacion ? 'Usuario actualizado' : 'Usuario creado');
       setForm({ id: '', name: '', gmail: '', password: '', role: 'user' });
       cargarUsuarios();
     } catch (err) {
@@ -64,30 +64,39 @@ export default function UsuariosPage() {
     }
   }
 
-  async function eliminarUsuario(id) {
+  function editarUsuario(user) {
+    const idNum = Number(user.id);
+    if (isNaN(idNum) || idNum <= 0) {
+        alert('ID inválido');
+        return;
+    }
+    setForm({
+        id: idNum,
+        name: user.name,
+        gmail: user.gmail,
+        password: '',
+        role: user.role
+    });
+}
+
+async function eliminarUsuario(id) {
+    const idNum = Number(id);
+    if (isNaN(idNum) || idNum <= 0) {
+        alert('ID inválido');
+        return;
+    }
     if (!confirm('¿Eliminar este usuario?')) return;
     try {
-      const res = await fetch(`/api/v1/users/${id}`, {
-        method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${TOKEN}` }
-      });
-      if (!res.ok) throw new Error('Error al eliminar');
-      cargarUsuarios();
+        const res = await fetch(`/api/v1/users/${idNum}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${TOKEN}` }
+        });
+        if (!res.ok) throw new Error('Error al eliminar');
+        cargarUsuarios();
     } catch (err) {
-      alert(err.message);
+        alert(err.message);
     }
-  }
-
-  function editarUsuario(user) {
-    setForm({
-      id: user.id,
-      name: user.name,
-      gmail: user.gmail,
-      password: '',
-      role: user.role
-    });
-  }
-
+}
   async function guardarDireccion(e) {
     e.preventDefault();
     setMsgAddr('');
@@ -112,7 +121,7 @@ export default function UsuariosPage() {
         const err = await res.json();
         throw new Error(err.error || 'Error');
       }
-      setMsgAddr('Dirección actualizada correctamente');
+      setMsgAddr('Dirección actualizada');
       setAddr({ userId: '', street: '', city: '', number: '' });
       cargarUsuarios();
     } catch (err) {
@@ -124,6 +133,7 @@ export default function UsuariosPage() {
     <div style={{ maxWidth: '700px', margin: '20px auto', fontFamily: 'Arial' }}>
       <h1>Usuarios</h1>
 
+      {/* Formulario crear/actualizar */}
       <div style={{ border: '1px solid #ccc', padding: '15px', marginBottom: '20px' }}>
         <h3>{form.id ? 'Actualizar usuario' : 'Nuevo usuario'}</h3>
         <form onSubmit={guardarUsuario}>
@@ -165,6 +175,7 @@ export default function UsuariosPage() {
         </form>
       </div>
 
+      {/* Formulario dirección */}
       <div style={{ border: '1px solid #ccc', padding: '15px', marginBottom: '20px' }}>
         <h3>Actualizar dirección</h3>
         <form onSubmit={guardarDireccion}>
@@ -200,6 +211,7 @@ export default function UsuariosPage() {
         </form>
       </div>
 
+      {/* LISTA DE USUARIOS CON BOTONES */}
       <h3>Lista de usuarios</h3>
       {loading ? (
         <p>Cargando...</p>

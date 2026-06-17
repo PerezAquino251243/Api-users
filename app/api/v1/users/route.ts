@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { users, getNextId, isGmailTaken } from '@/lib/db';
 
-// GET /api/v1/users?page=1&limit=10&search=texto
 export async function GET(request: NextRequest) {
     try {
         const searchParams = request.nextUrl.searchParams;
@@ -46,7 +45,6 @@ export async function GET(request: NextRequest) {
     }
 }
 
-// POST /api/v1/users
 export async function POST(request: NextRequest) {
     try {
         const body = await request.json();
@@ -67,7 +65,7 @@ export async function POST(request: NextRequest) {
         }
 
         const newUser = {
-            id: getNextId(), // ← CORREGIDO
+            id: getNextId(),
             name,
             gmail,
             password,

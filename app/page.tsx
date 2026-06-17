@@ -1,65 +1,227 @@
-import Image from "next/image";
+'use client';
 
-export default function Home() {
+import { useState, useEffect } from 'react';
+
+const TOKEN = 'admin-token';
+
+export default function UsuariosPage() {
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const [form, setForm] = useState({ id: '', name: '', gmail: '', password: '', role: 'user' });
+  const [msg, setMsg] = useState('');
+
+  const [addr, setAddr] = useState({ userId: '', street: '', city: '', number: '' });
+  const [msgAddr, setMsgAddr] = useState('');
+
+  useEffect(() => {
+    cargarUsuarios();
+  }, []);
+
+  async function cargarUsuarios() {
+    setLoading(true);
+    try {
+      const res = await fetch('/api/v1/users', {
+        headers: { 'Authorization': `Bearer ${TOKEN}` }
+      });
+      const data = await res.json();
+      setUsers(data.data || []);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function guardarUsuario(e) {
+    e.preventDefault();
+    setMsg('');
+    const esActualizacion = form.id !== '';
+    const url = esActualizacion ? `/api/v1/users/${form.id}` : '/api/v1/users';
+    const metodo = esActualizacion ? 'PUT' : 'POST';
+
+    try {
+      const res = await fetch(url, {
+        method: metodo,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${TOKEN}`
+        },
+        body: JSON.stringify({
+          name: form.name,
+          gmail: form.gmail,
+          password: form.password,
+          role: form.role
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Error');
+      setMsg(esActualizacion ? 'Usuario actualizado correctamente' : 'Usuario creado correctamente');
+      setForm({ id: '', name: '', gmail: '', password: '', role: 'user' });
+      cargarUsuarios();
+    } catch (err) {
+      setMsg('Error: ' + err.message);
+    }
+  }
+
+  async function eliminarUsuario(id) {
+    if (!confirm('¿Eliminar este usuario?')) return;
+    try {
+      const res = await fetch(`/api/v1/users/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${TOKEN}` }
+      });
+      if (!res.ok) throw new Error('Error al eliminar');
+      cargarUsuarios();
+    } catch (err) {
+      alert(err.message);
+    }
+  }
+
+  function editarUsuario(user) {
+    setForm({
+      id: user.id,
+      name: user.name,
+      gmail: user.gmail,
+      password: '', // no mostramos la contraseña
+      role: user.role
+    });
+    // Opcional: hacer scroll al formulario
+    document.querySelector('form')?.scrollIntoView({ behavior: 'smooth' });
+  }
+
+  async function guardarDireccion(e) {
+    e.preventDefault();
+    setMsgAddr('');
+    if (!addr.userId) {
+      setMsgAddr('Selecciona un usuario');
+      return;
+    }
+    try {
+      const res = await fetch(`/api/v1/users/${addr.userId}/address`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${TOKEN}`
+        },
+        body: JSON.stringify({
+          street: addr.street,
+          city: addr.city,
+          number: addr.number ? parseInt(addr.number) : undefined
+        })
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || 'Error');
+      }
+      setMsgAddr('Dirección actualizada correctamente');
+      setAddr({ userId: '', street: '', city: '', number: '' });
+      cargarUsuarios();
+    } catch (err) {
+      setMsgAddr('Error: ' + err.message);
+    }
+  }
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+    <div style={{ maxWidth: '700px', margin: '20px auto', fontFamily: 'Arial' }}>
+      <h1>Usuarios</h1>
+
+      {/* Formulario principal: crear/actualizar */}
+      <div style={{ border: '1px solid #ccc', padding: '15px', marginBottom: '20px' }}>
+        <h3>{form.id ? 'Actualizar usuario' : 'Nuevo usuario'}</h3>
+        <form onSubmit={guardarUsuario}>
+          <input
+            type="text"
+            placeholder="Nombre"
+            value={form.name}
+            onChange={e => setForm({...form, name: e.target.value})}
+            required
+          /><br/>
+          <input
+            type="email"
+            placeholder="Gmail"
+            value={form.gmail}
+            onChange={e => setForm({...form, gmail: e.target.value})}
+            required
+          /><br/>
+          <input
+            type="password"
+            placeholder="Contraseña"
+            value={form.password}
+            onChange={e => setForm({...form, password: e.target.value})}
+            required={!form.id}
+          /><br/>
+          <select
+            value={form.role}
+            onChange={e => setForm({...form, role: e.target.value})}
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+            <option value="user">Usuario</option>
+            <option value="admin">Admin</option>
+          </select><br/><br/>
+          <button type="submit">{form.id ? 'Actualizar' : 'Crear'}</button>
+          {form.id && (
+            <button type="button" onClick={() => setForm({ id: '', name: '', gmail: '', password: '', role: 'user' })}>
+              Cancelar
+            </button>
+          )}
+          <span style={{ marginLeft: '10px' }}>{msg}</span>
+        </form>
+      </div>
+
+      {/* Formulario para dirección */}
+      <div style={{ border: '1px solid #ccc', padding: '15px', marginBottom: '20px' }}>
+        <h3>Actualizar dirección</h3>
+        <form onSubmit={guardarDireccion}>
+          <select
+            value={addr.userId}
+            onChange={e => setAddr({...addr, userId: e.target.value})}
           >
-            Documentation
-          </a>
-        </div>
-      </main>
+            <option value="">Seleccionar usuario</option>
+            {users.map(u => (
+              <option key={u.id} value={u.id}>{u.name}</option>
+            ))}
+          </select><br/>
+          <input
+            type="text"
+            placeholder="Calle"
+            value={addr.street}
+            onChange={e => setAddr({...addr, street: e.target.value})}
+          /><br/>
+          <input
+            type="text"
+            placeholder="Ciudad"
+            value={addr.city}
+            onChange={e => setAddr({...addr, city: e.target.value})}
+          /><br/>
+          <input
+            type="number"
+            placeholder="Número"
+            value={addr.number}
+            onChange={e => setAddr({...addr, number: e.target.value})}
+          /><br/><br/>
+          <button type="submit">Actualizar dirección</button>
+          <span style={{ marginLeft: '10px' }}>{msgAddr}</span>
+        </form>
+      </div>
+
+      {/* Lista de usuarios */}
+      <h3>Lista de usuarios</h3>
+      {loading ? (
+        <p>Cargando...</p>
+      ) : (
+        <ul style={{ listStyle: 'none', padding: 0 }}>
+          {users.map(u => (
+            <li key={u.id} style={{ borderBottom: '1px solid #eee', padding: '8px 0' }}>
+              <strong>{u.name}</strong> - {u.gmail} - {u.role}
+              {u.address && ` - ${u.address.street || ''} ${u.address.number || ''}, ${u.address.city || ''}`}
+              <br/>
+              {/* Botón EDICIÓN: carga los datos en el formulario principal */}
+              <button onClick={() => editarUsuario(u)}>Editar</button>
+              <button onClick={() => eliminarUsuario(u.id)} style={{ color: 'red', marginLeft: '10px' }}>Eliminar</button>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }

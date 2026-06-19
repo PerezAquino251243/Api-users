@@ -6,7 +6,6 @@ export async function middleware(request: NextRequest) {
   const token = request.cookies.get("token")?.value;
   const path = request.nextUrl.pathname;
 
-  // 🔒 Ruta protegida: /usuarios y cualquier subruta
   if (path.startsWith("/usuarios")) {
     if (!token) {
       return NextResponse.redirect(new URL("/login", request.url));
@@ -22,7 +21,6 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // 🔄 Si ya está logueado y va a /login, redirigir a /usuarios
   if (path === "/login" && token) {
     try {
       const secret = new TextEncoder().encode(process.env.JWT_SECRET);

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { logout } from '@/app/actions/logout'; // 👈 Importar la acción
+import { logout } from '@/app/actions/logout';
 
 const TOKEN = 'admin-token';
 
@@ -74,7 +74,7 @@ export default function UsuariosPage() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <h1>Usuarios</h1>
         <div style={{ display: 'flex', gap: '10px' }}>
-          {/* 👇 Botón de logout */}
+          {/*Botón de logout */}
           <form action={logout}>
             <button
               type="submit"
@@ -90,7 +90,7 @@ export default function UsuariosPage() {
               Cerrar sesión
             </button>
           </form>
-          {/* Botón de agregar usuario (ya existente) */}
+          {/* Botón de agregar usuario*/}
           <button
             onClick={() => setModalOpen(true)}
             style={{
@@ -107,7 +107,7 @@ export default function UsuariosPage() {
         </div>
       </div>
 
-      {/* Modal (sin cambios) */}
+      {/* Modal*/}
       {modalOpen && (
         <div
           style={{
@@ -241,7 +241,7 @@ export default function UsuariosPage() {
         </div>
       )}
 
-      {/* Lista de usuarios (sin cambios) */}
+      {/* Lista de usuarios*/}
       <h3>Lista de usuarios</h3>
       {loading ? (
         <p>Cargando...</p>

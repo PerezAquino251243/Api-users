@@ -75,7 +75,7 @@ export async function DELETE(
 
         const userId = parseInt(id);
         if (isNaN(userId)) {
-            return NextResponse.json({ error: `ID inválido: ${id}` }, { status: 400 });
+            return NextResponse.json({ error: `ID inválido: ${userId}` }, { status: 400 });
         }
 
         const index = findUserIndexById(userId);

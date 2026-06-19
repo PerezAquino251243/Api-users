@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { logout } from '@/app/actions/logout'; // 👈 Importar la acción
 
 const TOKEN = 'admin-token';
 
@@ -72,22 +73,41 @@ export default function UsuariosPage() {
     <div style={{ maxWidth: '700px', margin: '20px auto', fontFamily: 'Arial' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <h1>Usuarios</h1>
-        <button
-          onClick={() => setModalOpen(true)}
-          style={{
-            padding: '8px 16px',
-            backgroundColor: '#0070f3',
-            color: 'white',
-            border: 'none',
-            borderRadius: '4px',
-            cursor: 'pointer',
-          }}
-        >
-          Agregar usuario
-        </button>
+        <div style={{ display: 'flex', gap: '10px' }}>
+          {/* 👇 Botón de logout */}
+          <form action={logout}>
+            <button
+              type="submit"
+              style={{
+                padding: '8px 16px',
+                backgroundColor: '#dc3545',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: 'pointer',
+              }}
+            >
+              Cerrar sesión
+            </button>
+          </form>
+          {/* Botón de agregar usuario (ya existente) */}
+          <button
+            onClick={() => setModalOpen(true)}
+            style={{
+              padding: '8px 16px',
+              backgroundColor: '#0070f3',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: 'pointer',
+            }}
+          >
+            Agregar usuario
+          </button>
+        </div>
       </div>
 
-      {/* Modal */}
+      {/* Modal (sin cambios) */}
       {modalOpen && (
         <div
           style={{
@@ -111,7 +131,7 @@ export default function UsuariosPage() {
               maxWidth: '400px',
               width: '100%',
               boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
-              color: '#000', // ← FORZAMOS COLOR NEGRO
+              color: '#000',
             }}
           >
             <h2 style={{ marginTop: 0, color: '#000' }}>Nuevo usuario</h2>
@@ -129,7 +149,7 @@ export default function UsuariosPage() {
                   border: '1px solid #ccc',
                   borderRadius: '4px',
                   backgroundColor: 'white',
-                  color: '#000', // texto negro
+                  color: '#000',
                 }}
               />
               <input
@@ -221,7 +241,7 @@ export default function UsuariosPage() {
         </div>
       )}
 
-      {/* Lista de usuarios */}
+      {/* Lista de usuarios (sin cambios) */}
       <h3>Lista de usuarios</h3>
       {loading ? (
         <p>Cargando...</p>

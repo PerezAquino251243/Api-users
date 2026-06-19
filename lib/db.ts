@@ -28,7 +28,7 @@ export let users: User[] = [
         gmail: 'maria@example.com', 
         password: 'abcdef', 
         role: 'user', 
-        address: null 
+        address: { street: 'Calle 123', city: 'Tuxtla', number: 4 } 
     },
 ];
 

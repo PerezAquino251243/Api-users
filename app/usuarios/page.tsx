@@ -5,18 +5,31 @@ import { useState, useEffect } from 'react';
 const TOKEN = 'admin-token';
 
 export default function UsuariosPage() {
+  // Estados para la lista
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const [form, setForm] = useState({ id: '', name: '', gmail: '', password: '', role: 'user' });
+  // Estado para el modal
+  const [showModal, setShowModal] = useState(false);
+
+  // Estado para el formulario de creación (solo para crear)
+  const [newUser, setNewUser] = useState({ name: '', gmail: '', password: '', role: 'user' });
   const [msg, setMsg] = useState('');
 
+  // Estados para edición (sin modal, directo en la lista)
+  const [editForm, setEditForm] = useState({ id: '', name: '', gmail: '', password: '', role: 'user' });
+  const [editMsg, setEditMsg] = useState('');
+
+  // Estados para dirección
   const [addr, setAddr] = useState({ userId: '', street: '', city: '', number: '' });
   const [msgAddr, setMsgAddr] = useState('');
 
+  // Cargar usuarios al inicio
   useEffect(() => {
     cargarUsuarios();
   }, []);
+
+  // === FUNCIONES CRUD ===
 
   async function cargarUsuarios() {
     setLoading(true);
@@ -33,40 +46,72 @@ export default function UsuariosPage() {
     }
   }
 
-  async function guardarUsuario(e) {
+  // Crear usuario (desde modal)
+  async function crearUsuario(e) {
     e.preventDefault();
     setMsg('');
-    const esActualizacion = form.id !== '';
-    const url = esActualizacion ? `/api/v1/users/${form.id}` : '/api/v1/users';
-    const metodo = esActualizacion ? 'PUT' : 'POST';
-
     try {
-      const res = await fetch(url, {
-        method: metodo,
+      const res = await fetch('/api/v1/users', {
+        method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${TOKEN}`
         },
         body: JSON.stringify({
-          name: form.name,
-          gmail: form.gmail,
-          password: form.password,
-          role: form.role
+          name: newUser.name,
+          gmail: newUser.gmail,
+          password: newUser.password,
+          role: newUser.role
         })
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Error');
-      setMsg(esActualizacion ? 'Usuario actualizado correctamente' : 'Usuario creado correctamente');
-      setForm({ id: '', name: '', gmail: '', password: '', role: 'user' });
+      setMsg('Usuario creado correctamente');
+      setNewUser({ name: '', gmail: '', password: '', role: 'user' });
       cargarUsuarios();
+      // Cerrar modal después de éxito
+      setTimeout(() => {
+        setShowModal(false);
+        setMsg('');
+      }, 1000);
     } catch (err) {
       setMsg('Error: ' + err.message);
     }
   }
 
+  // Actualizar usuario (desde lista)
+  async function actualizarUsuario(e) {
+    e.preventDefault();
+    setEditMsg('');
+    if (!editForm.id) return;
+    try {
+      const res = await fetch(`/api/v1/users/${editForm.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${TOKEN}`
+        },
+        body: JSON.stringify({
+          name: editForm.name,
+          gmail: editForm.gmail,
+          password: editForm.password,
+          role: editForm.role
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Error');
+      setEditMsg('Usuario actualizado correctamente');
+      setEditForm({ id: '', name: '', gmail: '', password: '', role: 'user' });
+      cargarUsuarios();
+      setTimeout(() => setEditMsg(''), 2000);
+    } catch (err) {
+      setEditMsg('Error: ' + err.message);
+    }
+  }
+
+  // Eliminar usuario
   async function eliminarUsuario(id) {
     if (!confirm('¿Eliminar este usuario?')) return;
-    console.log('Eliminando usuario con ID:', id);
     try {
       const res = await fetch(`/api/v1/users/${id}`, {
         method: 'DELETE',
@@ -79,8 +124,9 @@ export default function UsuariosPage() {
     }
   }
 
+  // Cargar datos en el formulario de edición
   function editarUsuario(user) {
-    setForm({
+    setEditForm({
       id: user.id,
       name: user.name,
       gmail: user.gmail,
@@ -89,6 +135,13 @@ export default function UsuariosPage() {
     });
   }
 
+  // Cancelar edición
+  function cancelarEdicion() {
+    setEditForm({ id: '', name: '', gmail: '', password: '', role: 'user' });
+    setEditMsg('');
+  }
+
+  // Actualizar dirección
   async function guardarDireccion(e) {
     e.preventDefault();
     setMsgAddr('');
@@ -116,56 +169,147 @@ export default function UsuariosPage() {
       setMsgAddr('Dirección actualizada correctamente');
       setAddr({ userId: '', street: '', city: '', number: '' });
       cargarUsuarios();
+      setTimeout(() => setMsgAddr(''), 2000);
     } catch (err) {
       setMsgAddr('Error: ' + err.message);
     }
   }
 
+  // === RENDER ===
+
   return (
     <div style={{ maxWidth: '700px', margin: '20px auto', fontFamily: 'Arial' }}>
-      <h1>Usuarios</h1>
-
-      <div style={{ border: '1px solid #ccc', padding: '15px', marginBottom: '20px' }}>
-        <h3>{form.id ? 'Actualizar usuario' : 'Nuevo usuario'}</h3>
-        <form onSubmit={guardarUsuario}>
-          <input
-            type="text"
-            placeholder="Nombre"
-            value={form.name}
-            onChange={e => setForm({...form, name: e.target.value})}
-            required
-          /><br/>
-          <input
-            type="email"
-            placeholder="Gmail"
-            value={form.gmail}
-            onChange={e => setForm({...form, gmail: e.target.value})}
-            required
-          /><br/>
-          <input
-            type="password"
-            placeholder="Contraseña"
-            value={form.password}
-            onChange={e => setForm({...form, password: e.target.value})}
-            required={!form.id}
-          /><br/>
-          <select
-            value={form.role}
-            onChange={e => setForm({...form, role: e.target.value})}
-          >
-            <option value="user">Usuario</option>
-            <option value="admin">Admin</option>
-          </select><br/><br/>
-          <button type="submit">{form.id ? 'Actualizar' : 'Crear'}</button>
-          {form.id && (
-            <button type="button" onClick={() => setForm({ id: '', name: '', gmail: '', password: '', role: 'user' })}>
-              Cancelar
-            </button>
-          )}
-          <span style={{ marginLeft: '10px' }}>{msg}</span>
-        </form>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <h1>Usuarios</h1>
+        <button
+          onClick={() => setShowModal(true)}
+          style={{
+            padding: '8px 16px',
+            backgroundColor: '#4CAF50',
+            color: 'white',
+            border: 'none',
+            borderRadius: '4px',
+            cursor: 'pointer'
+          }}
+        >
+          Agregar
+        </button>
       </div>
 
+      {/* === MODAL PARA CREAR === */}
+      {showModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          backgroundColor: 'rgba(0,0,0,0.5)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 999
+        }}>
+          <div style={{
+            backgroundColor: 'white',
+            padding: '30px',
+            borderRadius: '8px',
+            maxWidth: '400px',
+            width: '100%',
+            boxShadow: '0 4px 8px rgba(0,0,0,0.2)'
+          }}>
+            <h3>Nuevo usuario</h3>
+            <form onSubmit={crearUsuario}>
+              <input
+                type="text"
+                placeholder="Nombre"
+                value={newUser.name}
+                onChange={e => setNewUser({...newUser, name: e.target.value})}
+                required
+                style={{ width: '100%', padding: '8px', marginBottom: '10px' }}
+              /><br/>
+              <input
+                type="email"
+                placeholder="Gmail"
+                value={newUser.gmail}
+                onChange={e => setNewUser({...newUser, gmail: e.target.value})}
+                required
+                style={{ width: '100%', padding: '8px', marginBottom: '10px' }}
+              /><br/>
+              <input
+                type="password"
+                placeholder="Contraseña"
+                value={newUser.password}
+                onChange={e => setNewUser({...newUser, password: e.target.value})}
+                required
+                style={{ width: '100%', padding: '8px', marginBottom: '10px' }}
+              /><br/>
+              <select
+                value={newUser.role}
+                onChange={e => setNewUser({...newUser, role: e.target.value})}
+                style={{ width: '100%', padding: '8px', marginBottom: '10px' }}
+              >
+                <option value="user">Usuario</option>
+                <option value="admin">Admin</option>
+              </select><br/>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <button type="submit" style={{ padding: '8px 16px', backgroundColor: '#4CAF50', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
+                  Crear
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setShowModal(false); setMsg(''); setNewUser({ name: '', gmail: '', password: '', role: 'user' }); }}
+                  style={{ padding: '8px 16px', backgroundColor: '#f44336', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+                >
+                  Cancelar
+                </button>
+              </div>
+              {msg && <p style={{ marginTop: '10px' }}>{msg}</p>}
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* === FORMULARIO DE EDICIÓN (en línea) === */}
+      {editForm.id && (
+        <div style={{ border: '1px solid #ccc', padding: '15px', margin: '20px 0' }}>
+          <h3>Actualizar usuario</h3>
+          <form onSubmit={actualizarUsuario}>
+            <input
+              type="text"
+              placeholder="Nombre"
+              value={editForm.name}
+              onChange={e => setEditForm({...editForm, name: e.target.value})}
+              required
+            /><br/>
+            <input
+              type="email"
+              placeholder="Gmail"
+              value={editForm.gmail}
+              onChange={e => setEditForm({...editForm, gmail: e.target.value})}
+              required
+            /><br/>
+            <input
+              type="password"
+              placeholder="Contraseña (opcional)"
+              value={editForm.password}
+              onChange={e => setEditForm({...editForm, password: e.target.value})}
+            /><br/>
+            <select
+              value={editForm.role}
+              onChange={e => setEditForm({...editForm, role: e.target.value})}
+            >
+              <option value="user">Usuario</option>
+              <option value="admin">Admin</option>
+            </select><br/><br/>
+            <button type="submit">Actualizar</button>
+            <button type="button" onClick={cancelarEdicion} style={{ marginLeft: '10px' }}>Cancelar</button>
+            <span style={{ marginLeft: '10px' }}>{editMsg}</span>
+          </form>
+        </div>
+      )}
+
+      {/* === FORMULARIO DE DIRECCIÓN === */}
       <div style={{ border: '1px solid #ccc', padding: '15px', marginBottom: '20px' }}>
         <h3>Actualizar dirección</h3>
         <form onSubmit={guardarDireccion}>
@@ -201,6 +345,7 @@ export default function UsuariosPage() {
         </form>
       </div>
 
+      {/* === LISTA DE USUARIOS === */}
       <h3>Lista de usuarios</h3>
       {loading ? (
         <p>Cargando...</p>
